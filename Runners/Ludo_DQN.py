@@ -3,7 +3,7 @@ import os
 import numpy as np
 from tqdm import tqdm
 
-from Agents.A2CAgent import Agent
+from Agents.DQNAgent import DQNAgent
 from Boards.Full_Board import FullBoard
 
 
@@ -13,26 +13,25 @@ def choose_rand(a):
 
 def run_game(num_ep, model_output):
     env = FullBoard()
-    agent0 = Agent(n_actions=env.action_size(), input_dim=env.state_size())
+    agent0 = DQNAgent(env.state_size(), env.action_size())
+    print(env.state_size(), env.action_size())
+
+    batch = agent0.get_batch_size()
 
     agent0_reward = []
     agent1_reward = []
     agent2_reward = []
     agent3_reward = []
-
     episode_length = []
 
-    output_dir_a = 'model_output/A2C/%s/actor/' % model_output
-    output_dir_c = 'model_output/A2C/%s/critic/' % model_output
+    output_dir = 'model_output/DQN/%s/' % model_output
 
-    if not os.path.exists(output_dir_a):
-        os.makedirs(output_dir_a)
-    if not os.path.exists(output_dir_c):
-        os.makedirs(output_dir_c)
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
 
     for ep in tqdm(range(0, num_ep), ascii=True, unit="e"):
-        step = 0
         s, _, game_over, player_turn = env.reset()
+        step = 0
         episode_reward = [0.0, 0.0, 0.0, 0.0]
         while not game_over:
             # Roll dice and retrieve valid actions
@@ -42,17 +41,17 @@ def run_game(num_ep, model_output):
             if action_list:
                 if player_turn == 0:
                     # Process state and query agent for action
-                    s_t = env.convert_state(0)
-                    action = agent0.act(s_t, action_list)
+                    s_ = env.convert_state(0)
+                    action = agent0.act(s_, action_list)
                 else:
                     action = choose_rand(action_list)
 
-                s_, reward, game_over, player_turn_temp = env.make_step(action)
+                new_s, reward, game_over, player_turn_temp = env.make_step(action)
 
                 if player_turn == 0:
-                    # Perform one-step update on S, R, S'
-                    s_t_ = env.convert_state(0)
-                    agent0.learn(s_t, action, reward[0], s_t_, game_over)
+                    # Store transition in replay buffer
+                    new_s_ = env.convert_state(0)
+                    agent0.remember(s_, action, reward[0], new_s_, game_over)
 
                 episode_reward[player_turn] += reward[player_turn]
 
@@ -69,18 +68,11 @@ def run_game(num_ep, model_output):
                 agent3_reward.append(episode_reward[3])
                 episode_length.append(step / 4)
 
-        if ep > 10000:
-            agent0.reduce_alpha()
+        agent0.reduce_epsilon()
+        if len(agent0.memory) > batch:
+            agent0.replay()
 
-        # Log and save weights
-        if ep % 500 == 0:
-            print(np.average(agent0_reward[-1000:]))
-
-        if ep % 100 == 0 and not ep == 0:
-            try:
-                agent0.save_model(output_dir_a + "weights_" + '{:04d}'.format(ep) + ".hdf5",
-                                  output_dir_c + "weights_" + '{:04d}'.format(ep) + ".hdf5")
-            except RuntimeError:
-                print("Error")
+        if ep % 100 == 0:
+            agent0.save(output_dir + "weights_" + '{:04d}'.format(ep) + ".hdf5")
 
     return [agent0_reward, agent1_reward, agent2_reward, agent3_reward, episode_length]
