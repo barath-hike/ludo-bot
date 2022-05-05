@@ -54,8 +54,7 @@ class DQNAgent:
 
         # Find action-values for state and sort highest to lowest
         action_values = self.model.predict(state)
-        sorted_pairs = sorted(enumerate(action_values), key=itemgetter(1), reverse=True)
-
+        sorted_pairs = sorted(enumerate(action_values[0]), key=itemgetter(1), reverse=True)
         # return highest-valued valid action
         for action, value in sorted_pairs:
             if action in action_list:

@@ -3,8 +3,8 @@ import os
 import numpy as np
 from tqdm import tqdm
 
-from Full_Board import FullBoard
-from ReinforceAgent import REINFORCEAgent
+from Boards.Full_Board import FullBoard
+from Agents.ReinforceAgent import REINFORCEAgent
 
 
 def choose_rand(a):
@@ -14,7 +14,7 @@ def choose_rand(a):
 def run_game(num_ep, model_output):
     env = FullBoard()
     agent0 = REINFORCEAgent(env.state_size(), env.action_size())
-    batch_size = 200
+    batch_size = 10
 
     agent0_reward = []
     agent1_reward = []
