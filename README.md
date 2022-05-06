@@ -2,9 +2,10 @@
 
 ## Pre-requisites
 The training code has been run using python 3.6. The following dependencies are required:
-tensorflow 2.5.0
-tensorflow_probability 0.11.1
-tqdm
+
+- tensorflow 2.5.0
+- tensorflow_probability 0.11.1
+- tqdm
 
 Alternatively an image can be created using the Dockerfile provided 
 
