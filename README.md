@@ -8,7 +8,7 @@ tqdm
 
 Alternatively an image can be created using the Dockerfile provided 
 
-##Training
+## Training
 To train an algorithm use the train.py script. Within this file is the option to choose which runner to import and how many episodes.
 The runner can be selected from the relevant import at the top of the file. Single DQN is already selected for 40,000 training episodes.
 Each runner will execute the training for the relevant algorithm. Hyperparameters for each agent can be changed within their respective classes
