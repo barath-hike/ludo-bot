@@ -1,19 +1,19 @@
 import os
 from datetime import datetime
 
-from Runners.Ludo_DQN import run_game
+# from Runners.Ludo_DQN import run_game
 
 
 # from Runners.Ludo_AC import run_game
 # from Runners.Ludo_Reinforce import run_game
-# from Runners.Ludo_DQN_Multi import run_game
+from Runners.Ludo_DQN_Multi import run_game
 # from Runners.Ludo_AC_Multi import run_game
 # from Runners.Run_Small import run_game
 
 
 def main():
-    episodes = 40_000
-    run_no = 53
+    episodes = 40_001
+    run_no = 1
     run_id = s1 = f'{run_no:04d}'
 
     returns = run_game(episodes, run_id)

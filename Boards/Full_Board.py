@@ -12,9 +12,11 @@ class FullBoard:
         self.player_turn = 0
         self.pieces = 4
 
-        self.state = [0, 62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 4, 0, 4, 0, 4, 0, 4, 0]
+        # self.state = [0, 62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 4, 0, 4, 0, 4, 0, 4, 0]
+        self.state = [0, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 0, 0, 0, 0, 0, 0, 0, 0]
         self.reset()
 
+        self.safe = [8, 13, 21, 26, 34, 39, 47]
         self.action_list = []
         self.state_list = []
         # self.action_types = []
@@ -88,7 +90,7 @@ class FullBoard:
                         is_pos_occupied = self.check_opp_pieces(61, p)
 
                         if is_pos_occupied != 0:  # move knocks off opponent
-                            temp_state[is_pos_occupied] = 62
+                            temp_state[is_pos_occupied] = 56
 
                         self.state_list.append(self._process(temp_state))
                         self.action_list.append(i)
@@ -103,7 +105,7 @@ class FullBoard:
                     is_pos_occupied = self.check_opp_pieces(new_pos, p)
 
                     if is_pos_occupied != 0:  # move knocks off opponent
-                        temp_state[is_pos_occupied] = 62
+                        temp_state[is_pos_occupied] = 56
 
                     self.state_list.append(self._process(temp_state))
                     self.action_list.append(j)
@@ -122,10 +124,10 @@ class FullBoard:
         if pos > 5:
             for i in range(1, self.players):
                 op_player = (p + i) % self.players
-                new_pos = pos + 14 * i
+                new_pos = (pos + 13 * i) % 56
 
-                if new_pos >= 62:
-                    new_pos = (new_pos % 62) + 6
+                # if new_pos >= 62:
+                #     new_pos = (new_pos % 62) + 6
 
                 for j in range(0, self.pieces):
                     if self.state[1 + op_player * self.pieces + j] == new_pos:
@@ -134,7 +136,8 @@ class FullBoard:
 
     def reset(self):
         _seed_random()
-        self.state = [0, 62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 4, 0, 4, 0, 4, 0, 4, 0]
+        # self.state = [0, 62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 4, 0, 4, 0, 4, 0, 4, 0]
+        self.state = [0, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 0, 0, 0, 0, 0, 0, 0, 0]
         self.roll_dice()
         self.reward = [0.0, 0.0, 0.0, 0.0]
         self.player_turn = np.random.randint(0, 4)
@@ -158,14 +161,14 @@ class FullBoard:
                 # Get the position of the piece
                 pos = state_[1 + self.pieces * i + j]
                 # 0 inaccessible pieces and convert the rest
-                if pos == 62:
-                    new_pos = 0
-                elif pos < 6:
-                    new_pos = 0
-                else:
-                    new_pos = pos - (14 * i)
-                    if new_pos < 6:
-                        new_pos = 62 + new_pos - 6
+                # if pos == 56:
+                    # new_pos = 0
+                # elif pos < 6:
+                #     new_pos = 0
+                # else:
+                new_pos = pos - (13 * i)
+                    # if new_pos < 6:
+                    #     new_pos = 62 + new_pos - 6
                 # update position in state_
                 state_[1 + self.pieces * i + j] = new_pos
 

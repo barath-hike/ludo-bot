@@ -9,9 +9,10 @@ from tensorflow.keras.optimizers import Adam
 
 
 class DQNAgent:
-    def __init__(self, state_size, action_size, epsilon=0.9):
+    def __init__(self, state_size, action_size, max_val, epsilon=0.9):
         self.state_size = state_size
         self.action_size = action_size
+        self.max_val = max_val
 
         self.memory = deque(maxlen=20000)
 
@@ -26,7 +27,7 @@ class DQNAgent:
         self.batch = 256
 
         self.model = self._build_model()
-        self.model.summary()
+        # self.model.summary()
         self.target_model = self._build_model()
         self.target_model.set_weights(self.model.get_weights())
 
@@ -36,8 +37,10 @@ class DQNAgent:
     def _build_model(self):
 
         model = Sequential()
-        model.add(Dense(32, input_shape=(self.state_size, 1), activation='relu'))
-        model.add(Dense(16, activation='relu'))
+        model.add(Dense(64, input_shape=(self.state_size, 1), activation='elu'))
+        model.add(Dense(64, activation='elu'))
+        model.add(Dense(64, activation='elu'))
+        model.add(Dense(64, activation='elu'))
         model.add(Flatten())
         model.add(Dense(self.action_size, activation='linear'))
         model.compile(loss='mse', optimizer=Adam(learning_rate=self.learning_rate))
@@ -50,7 +53,7 @@ class DQNAgent:
         # epsilon-greedy exploration
         if np.random.uniform(0, 1) <= self.epsilon:
             return np.random.choice(action_list)
-        state = np.reshape(state, [1, 25, 1]) / 62
+        state = np.reshape(state, [1, self.state_size, 1]) / self.max_val
 
         # Find action-values for state and sort highest to lowest
         action_values = self.model.predict(state)
@@ -64,8 +67,8 @@ class DQNAgent:
         # sample batch of transitions and organise into separate lists
         minibatch = random.sample(self.memory, self.batch)
         states, actions, rewards, next_states, done = zip(*minibatch)
-        states = np.reshape(states, [self.batch, self.state_size, 1]) / 62
-        next_states = np.reshape(next_states, [self.batch, self.state_size, 1]) / 62
+        states = np.reshape(states, [self.batch, self.state_size, 1]) / self.max_val
+        next_states = np.reshape(next_states, [self.batch, self.state_size, 1]) / self.max_val
 
         # Approximate state-action pairs for all states in the batch
         q_states = self.model.predict(states)

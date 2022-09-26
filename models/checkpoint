@@ -1,0 +1,2 @@
+model_checkpoint_path: "ludo_qval_rnn_11_to_15_v2"
+all_model_checkpoint_paths: "ludo_qval_rnn_11_to_15_v2"
