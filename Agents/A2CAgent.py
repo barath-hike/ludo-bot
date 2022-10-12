@@ -15,7 +15,7 @@ class Actor(keras.Model):
 
         self.model = keras.Sequential(
             layers=[
-                Dense(32, input_shape=(1, self.state_size, 1), activation='relu'),
+                Dense(32, input_shape=(self.state_size, 1), activation='relu'),
                 Dense(16, activation='relu'),
                 Flatten(),
                 Dense(4, activation='softmax')
@@ -32,7 +32,7 @@ class Critic(keras.Model):
 
         self.model = keras.Sequential(
             layers=[
-                Dense(32, input_shape=(1, self.state_size, 1), activation='relu'),
+                Dense(32, input_shape=(self.state_size, 1), activation='relu'),
                 Dense(16, activation='relu'),
                 Flatten(),
                 Dense(1, activation='linear')
@@ -43,13 +43,14 @@ class Critic(keras.Model):
 
 
 class Agent:
-    def __init__(self, alpha=1e-4, gamma=0.95, epsilon=0.9, n_actions=4, input_dim=25):
+    def __init__(self, alpha=1e-4, gamma=0.95, epsilon=0.9, n_actions=4, input_dim=25, max_val=69):
         tf.random.set_seed(time.time())
         self.alpha = alpha
         self.gamma = gamma
         self.epsilon = epsilon
         self.n_actions = n_actions
         self.state_size = input_dim
+        self.max_val = max_val
         self.loss = keras.losses.Huber()
 
         self.actor = Actor(n_actions=self.n_actions, state_size=self.state_size)
@@ -60,7 +61,7 @@ class Agent:
 
     def act(self, s, action_list):
         # Convert state and query network for probabilities
-        state = np.reshape(s, [1, self.state_size, 1]) / 62
+        state = np.reshape(s, [1, self.state_size, 1]) / self.max_val
         state = tf.convert_to_tensor(state, dtype=tf.float32)
         probs = self.actor.call(state)
         # filter out invalid actions and create distribution
@@ -77,8 +78,8 @@ class Agent:
         return action_list[action]
 
     def learn(self, state, action, reward, state_, done):
-        state = np.reshape(state, [1, self.state_size, 1]) / 62
-        state_ = np.reshape(state_, [1, self.state_size, 1]) / 62
+        state = np.reshape(state, [1, self.state_size, 1]) / self.max_val
+        state_ = np.reshape(state_, [1, self.state_size, 1]) / self.max_val
         state = tf.convert_to_tensor(state, dtype=tf.float32)
         state_ = tf.convert_to_tensor(state_, dtype=tf.float32)
         reward = tf.convert_to_tensor(reward, dtype=tf.float32)
@@ -126,6 +127,8 @@ class Agent:
             print("Error: Exception when saving model weights")
 
     def load_model(self, name_a, name_b):
+        self.actor.built = True
+        self.critic.built = True
         self.actor.load_weights(name_a)
         self.critic.load_weights(name_b)
 

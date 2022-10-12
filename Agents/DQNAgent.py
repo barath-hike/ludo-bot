@@ -23,7 +23,7 @@ class DQNAgent:
 
         self.gamma = 0.95
 
-        self.learning_rate = 0.001
+        self.learning_rate = 0.0001
         self.batch = 256
 
         self.model = self._build_model()
@@ -32,7 +32,7 @@ class DQNAgent:
         self.target_model.set_weights(self.model.get_weights())
 
         self.iterations = 0
-        self.copy = 16
+        self.copy = 128
 
     def _build_model(self):
 
@@ -57,11 +57,26 @@ class DQNAgent:
 
         # Find action-values for state and sort highest to lowest
         action_values = self.model.predict(state)
+        print(action_values)
         sorted_pairs = sorted(enumerate(action_values[0]), key=itemgetter(1), reverse=True)
         # return highest-valued valid action
         for action, value in sorted_pairs:
             if action in action_list:
                 return action
+
+    def act_test(self, state, action_list):
+        # epsilon-greedy exploration
+        # if np.random.uniform(0, 1) <= self.epsilon:
+        #     return np.random.choice(action_list)
+        state = np.reshape(state, [1, self.state_size, 1]) / self.max_val
+
+        # Find action-values for state and sort highest to lowest
+        action_values = self.model.predict(state)
+        sorted_pairs = sorted(enumerate(action_values[0]), key=itemgetter(1), reverse=True)
+        # return highest-valued valid action
+        for action, value in sorted_pairs:
+            if action in action_list:
+                return action, action_values
 
     def replay(self):
         # sample batch of transitions and organise into separate lists
