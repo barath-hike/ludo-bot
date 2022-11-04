@@ -5,7 +5,7 @@ from tqdm import tqdm
 
 from Agents.A2CAgent import Agent
 from Boards.Speed_leedo_2p_v3 import FullBoard
-
+import gc
 
 def choose_rand(a):
     return np.random.choice(a)
@@ -57,6 +57,7 @@ def run_game(num_ep, model_output):
                     # if player_turn % 2 == 0:
                         s_t_ = env.convert_state(player_turn)
                         agent0.learn(s_t, action, reward[player_turn], s_t_, game_over)
+                        gc.collect()
 
                     episode_reward[player_turn] += reward[player_turn]
 

@@ -13,7 +13,7 @@ from Runners.Ludo_AC_2p_v3 import run_game
 
 def main():
     episodes = 200_001
-    run_no = 7
+    run_no = 8
     run_id = s1 = f'{run_no:04d}'
 
     returns = run_game(episodes, run_id)

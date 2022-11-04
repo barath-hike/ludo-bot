@@ -24,6 +24,11 @@ class FullBoard:
         self.new_start = [51, 63]
         self.end = [57, 69]
 
+        self.mov = [
+            list(range(1,58)),
+            list(range(27,52)) + list(range(26)) + list(range(64, 70))
+        ]
+
         self.six_flag = 0
 
         self.max_value = 500
@@ -63,25 +68,31 @@ class FullBoard:
     def get_player_turn(self):
         return self.player_turn
 
-
+    def return_state(self):
+        return self.state
+        
     # Step state,
     def make_step(self, a):
-        self.state = np.copy(self.state_list[self.action_list.index(a)])
-        old_state_reward = np.copy(self.state_reward_p[str(int(self.player_turn))])
-        self.state_reward_p[str(int(self.player_turn))] = np.copy(self.state_reward_list[self.action_list.index(a)])
-        self.state_reward = np.copy(self.state_reward_list[self.action_list.index(a)])
+        self.state = np.copy(self.state_list[self.action_list.index(a)]).tolist()
+        old_state_reward = np.copy(self.state_reward_p[str(int(self.player_turn))]).tolist()
+        self.state_reward_p[str(int(self.player_turn))] = np.copy(self.state_reward_list[self.action_list.index(a)]).tolist()
+        self.state_reward = np.copy(self.state_reward_list[self.action_list.index(a)]).tolist()
 
         game_over = self.is_game_over()
         
-        risk1 = self.risk(self.state)
+        # print(self.state)
+        risk1 = self.risk(self.state, 0)
         risk1 = np.sum(np.array(risk1)*np.array(self.state_reward[:4]))
 
-        risk2 = self.risk(self.convert_state(1))
+        risk2 = self.risk(self.convert_state(1), 1)
         risk2 = np.sum(np.array(risk2)*np.array(self.state_reward[4:]))
 
         turns = np.floor(self.turns/2) + 1
         self.reward = [(np.sum(self.state_reward[:4]) - risk1 + risk2)/turns, 
                        (np.sum(self.state_reward[4:]) - risk2 + risk1)/turns]
+
+        self.reward1 = [np.sum(self.state_reward[:4]), 
+                        np.sum(self.state_reward[4:])]
 
         # if (game_over != -1):
         #     print(self.reward)
@@ -96,9 +107,32 @@ class FullBoard:
             self.player_turn = (self.player_turn + 1) % self.players
             self.turns += 1
 
-        return self.state, self.reward, (game_over != -1), self.player_turn
+        return self.state, self.reward, (game_over != -1), self.player_turn, self.reward1
 
-    def risk(self, s):
+    def risk(self, s, p):
+
+        safe = np.copy(self.safe).tolist()
+        for i in range(self.pieces):
+            for j in range(self.pieces):
+                if i != j:
+                    if s[1 + i] == s[1 + j]:
+                        safe.append(s[1 + i])
+
+        probs = []
+        for i in range(self.pieces):
+            prob = 0
+            for j in range(self.pieces):
+                opp_idx = self.mov[1 - p].index(s[ 1 + self.pieces + j])
+                if s[1 + i] in self.mov[1 - p][opp_idx + 1 : opp_idx + 7] and s[1 + i] not in safe:
+                    prob += 1/6
+                elif s[1 + i] in self.mov[1 - p][opp_idx + 7 : opp_idx + 13] and s[1 + i] not in safe:
+                    prob += 1/36
+                elif s[1 + i] in self.mov[1 - p][opp_idx + 13 : opp_idx + 18] and s[1 + i] not in safe:
+                    prob+= 1/(6*6*6)
+            probs.append(prob)
+        return probs
+
+    def risk_(self, s):
         probs = []
         for i in range(self.pieces):
             p = 0
@@ -149,8 +183,8 @@ class FullBoard:
 
         for j in range(0, self.pieces):
 
-            temp_state = np.copy(self.state)
-            temp_state_reward = np.copy(self.state_reward)
+            temp_state = np.copy(self.state).tolist()
+            temp_state_reward = np.copy(self.state_reward).tolist()
 
             old_pos = temp_state[1 + p * self.pieces + j]
             if old_pos != self.end[p]:
@@ -185,7 +219,7 @@ class FullBoard:
                     else:
                         self.home_list.append(0)
 
-                    temp_state[(1 + self.players * self.pieces):(1 + 2 * self.players * self.pieces)] = np.copy(temp_state_reward)
+                    temp_state[(1 + self.players * self.pieces):(1 + 2 * self.players * self.pieces)] = np.copy(temp_state_reward).tolist()
 
                     self.state_list.append(temp_state)
                     self.state_reward_list.append(temp_state_reward)
@@ -220,9 +254,9 @@ class FullBoard:
     # Convert the current state to point of view for player p
     # Optionally process specific state s
     def convert_state(self, p, s=None):
-        state_ = np.copy(self.state)
+        state_ = np.copy(self.state).tolist()
         if s:
-            state_ = np.copy(s)
+            state_ = np.copy(s).tolist()
 
         # Cycle the state representation such that the current player is in position 0
         if p != 0:

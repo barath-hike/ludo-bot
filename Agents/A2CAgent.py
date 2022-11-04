@@ -5,7 +5,14 @@ import tensorflow as tf
 import tensorflow.keras as keras
 import tensorflow_probability as tfp
 from tensorflow.keras.layers import Dense, Flatten
+import gc
 
+import os
+os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"]="-1"
+# physical_devices = tf.config.list_physical_devices('GPU')
+# for physical_device in physical_devices:
+#     tf.config.experimental.set_memory_growth(physical_device, True)
 
 class Actor(keras.Model):
     def __init__(self, n_actions, state_size):
@@ -15,7 +22,10 @@ class Actor(keras.Model):
 
         self.model = keras.Sequential(
             layers=[
-                Dense(32, input_shape=(self.state_size, 1), activation='relu'),
+                Dense(16, input_shape=(self.state_size, 1), activation='relu'),
+                Dense(32, activation='relu'),
+                Dense(64, activation='relu'),
+                Dense(32, activation='relu'),
                 Dense(16, activation='relu'),
                 Flatten(),
                 Dense(4, activation='softmax')
@@ -32,7 +42,10 @@ class Critic(keras.Model):
 
         self.model = keras.Sequential(
             layers=[
-                Dense(32, input_shape=(self.state_size, 1), activation='relu'),
+                Dense(16, input_shape=(self.state_size, 1), activation='relu'),
+                Dense(32, activation='relu'),
+                Dense(64, activation='relu'),
+                Dense(32, activation='relu'),
                 Dense(16, activation='relu'),
                 Flatten(),
                 Dense(1, activation='linear')
@@ -73,9 +86,22 @@ class Agent:
         action = 0
         if len(action_list) > 1:
             action = action_probabilities.sample().numpy()
-
+        # gc.collect()
         # store and return action and log_prob of action
         return action_list[action]
+
+    def act_test(self, s, action_list):
+        # Convert state and query network for probabilities
+        state = np.reshape(s, [1, self.state_size, 1]) / self.max_val
+        state = tf.convert_to_tensor(state, dtype=tf.float32)
+        probs = self.actor.call(state)
+        # filter out invalid actions and create distribution
+        valid = []
+        for a in action_list:
+            valid.append(probs[0][a])
+
+        # store and return action and log_prob of action
+        return action_list[np.argmax(valid)]
 
     def learn(self, state, action, reward, state_, done):
         state = np.reshape(state, [1, self.state_size, 1]) / self.max_val
@@ -109,6 +135,7 @@ class Agent:
         grads2 = tape2.gradient(critic_loss, self.critic.trainable_variables)
         self.a_opt.apply_gradients(zip(grads1, self.actor.trainable_variables))
         self.c_opt.apply_gradients(zip(grads2, self.critic.trainable_variables))
+        # gc.collect()
         return actor_loss, critic_loss
 
     def reduce_alpha(self):

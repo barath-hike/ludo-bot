@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 import tensorflow.keras as keras
 import tensorflow_probability as tfp
-from tensorflow.keras.layers import Dense, Flatten
+from tensorflow.keras.layers import Dense, Flatten, InputLayer
 
 
 class REINFORCE(keras.Model):
@@ -13,10 +13,14 @@ class REINFORCE(keras.Model):
         # Define model shape
         self.model = keras.Sequential(
             layers=[
-                Dense(32, input_shape=(1, self.state_size, 1), activation='relu'),
-                Dense(16, activation='relu'),
+                InputLayer(input_shape=(self.state_size,)),
+                Dense(32, activation='elu'),
+                Dense(64, activation='elu'),
+                Dense(64, activation='elu'),
+                Dense(32, activation='elu'),
+                Dense(16, activation='elu'),
                 Flatten(),
-                Dense(self.action_size, activation='softmax')
+                Dense(4, activation='softmax')
             ])
 
     def action_distribution(self, observations):
@@ -27,7 +31,7 @@ class REINFORCE(keras.Model):
         return self.model(s)
 
 
-class REINFORCEAgent:
+class Agent:
     def __init__(self, state_size, action_size):
         self.state_size = state_size
         self.action_size = action_size
@@ -37,9 +41,20 @@ class REINFORCEAgent:
         self.network = REINFORCE(self.state_size, self.action_size)
         self.opt = tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
 
+    def preprocess(self, s):
+        s = s[:-2]
+        s = np.array(s).astype('float32')
+        s[0] = s[0]/6
+        s[1:9] = s[1:9]/69
+        s[9:17] = s[9:17]/138
+        return s
+
     def act(self, state, action_list):
+
+        state = self.preprocess(state)
+        
         # Reshape input and call policy
-        state = np.reshape(state, [1, self.state_size, 1]) / 62
+        state = np.reshape(state, [1, self.state_size])
         state = tf.convert_to_tensor(state)
         probs = self.network.call(state)
         # Filter valid actions and sample action from distribution
@@ -50,6 +65,22 @@ class REINFORCEAgent:
         action = action_probabilities.sample()
         # return chosen action
         return action_list[int(action.numpy())]
+
+    def act_test(self, state, action_list):
+
+        state = self.preprocess(state)
+
+        # Convert state and query network for probabilities
+        state = np.reshape(state, [1, self.state_size])
+        state = tf.convert_to_tensor(state, dtype=tf.float32)
+        probs = self.network.call(state)
+        # filter out invalid actions and create distribution
+        valid = []
+        for a in action_list:
+            valid.append(probs[0][a])
+
+        # store and return action and log_prob of action
+        return action_list[np.argmax(valid)]
 
     def learn(self, traj, dr):
         observations = tf.convert_to_tensor(traj[0])
@@ -63,12 +94,13 @@ class REINFORCEAgent:
         grads = tape.gradient(loss, self.network.model.trainable_weights)
         self.opt.apply_gradients(zip(grads, self.network.model.trainable_weights))
 
-    def load(self, name):
-        self.network.load_weights(name)
+    def load_model(self, name):
+        self.network.built = True
+        self.network.model.load_weights(name)
 
-    def save(self, name):
+    def save_model(self, name):
         try:
-            self.network.save_weights(name)
+            self.network.model.save_weights(name)
         except RuntimeError:
             print("Error: Exception when saving model weights")
 

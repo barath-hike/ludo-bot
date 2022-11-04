@@ -65,10 +65,10 @@ class FullBoard:
 
     # Step state,
     def make_step(self, a):
-        self.state = np.copy(self.state_list[self.action_list.index(a)])
-        old_state_reward = np.copy(self.state_reward_p[str(int(self.player_turn))])
-        self.state_reward_p[str(int(self.player_turn))] = np.copy(self.state_reward_list[self.action_list.index(a)])
-        self.state_reward = np.copy(self.state_reward_list[self.action_list.index(a)])
+        self.state = np.copy(self.state_list[self.action_list.index(a)]).tolist()
+        old_state_reward = np.copy(self.state_reward_p[str(int(self.player_turn))]).tolist()
+        self.state_reward_p[str(int(self.player_turn))] = np.copy(self.state_reward_list[self.action_list.index(a)]).tolist()
+        self.state_reward = np.copy(self.state_reward_list[self.action_list.index(a)]).tolist()
 
         if self.cut_list[self.action_list.index(a)] == 1:
             self.six_flag = 0
@@ -98,6 +98,8 @@ class FullBoard:
     def max_val(self):
         return self.max_value
 
+    def return_state(self):
+        return self.state
 
     # Checks if any player has all pieces == 0
     def is_game_over(self):
@@ -125,8 +127,8 @@ class FullBoard:
 
         for j in range(0, self.pieces):
 
-            temp_state = np.copy(self.state)
-            temp_state_reward = np.copy(self.state_reward)
+            temp_state = np.copy(self.state).tolist()
+            temp_state_reward = np.copy(self.state_reward).tolist()
 
             old_pos = temp_state[1 + p * self.pieces + j]
             if old_pos != self.end[p]:
@@ -161,7 +163,7 @@ class FullBoard:
                     else:
                         self.home_list.append(0)
 
-                    temp_state[(1 + self.players * self.pieces):(1 + 2 * self.players * self.pieces)] = np.copy(temp_state_reward)
+                    temp_state[(1 + self.players * self.pieces):(1 + 2 * self.players * self.pieces)] = np.copy(temp_state_reward).tolist()
 
                     self.state_list.append(temp_state)
                     self.state_reward_list.append(temp_state_reward)
@@ -196,9 +198,9 @@ class FullBoard:
     # Convert the current state to point of view for player p
     # Optionally process specific state s
     def convert_state(self, p, s=None):
-        state_ = np.copy(self.state)
+        state_ = np.copy(self.state).tolist()
         if s:
-            state_ = np.copy(s)
+            state_ = np.copy(s).tolist()
 
         # Cycle the state representation such that the current player is in position 0
         if p != 0:
